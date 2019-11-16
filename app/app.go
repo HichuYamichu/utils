@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/hichuyamichu-me/utils/handlers"
 	"github.com/hichuyamichu-me/utils/images"
 )
 
@@ -39,7 +40,14 @@ func (a *App) setupHandler() http.Handler {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/images", func(r chi.Router) {
-			r.Post("/crop", images.Crop)
+			r.Method("POST", "/fit", handlers.ForImages(images.Fit))
+			r.Method("POST", "/fill", handlers.ForImages(images.Fill))
+			r.Method("POST", "/resize", handlers.ForImages(images.Resize))
+			r.Method("POST", "/blurr", handlers.ForImages(images.Blurr))
+			r.Method("POST", "/saturate", handlers.ForImages(images.Saturation))
+			r.Method("POST", "/sharpen", handlers.ForImages(images.Sharpen))
+			r.Method("POST", "/gamma", handlers.ForImages(images.Gamma))
+			r.Method("POST", "/contrast", handlers.ForImages(images.Contrast))
 		})
 	})
 

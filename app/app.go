@@ -5,13 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
-	"github.com/hichuyamichu-me/utils/handlers"
-	"github.com/hichuyamichu-me/utils/images"
+	"github.com/hichuyamichu-me/utils/app/handler"
 )
 
 // App : Application struct
@@ -24,42 +20,10 @@ func New(host, port string) *App {
 	a := &App{}
 	a.srv = &http.Server{}
 	a.srv.Addr = fmt.Sprintf("%s:%s", host, port)
-	a.srv.Handler = a.setupHandler()
+	a.srv.Handler = handler.New()
 	a.srv.WriteTimeout = 15 * time.Second
 	a.srv.ReadTimeout = 15 * time.Second
 	return a
-}
-
-func (a *App) setupHandler() http.Handler {
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(60 * time.Second))
-
-	r.Route("/api", func(r chi.Router) {
-		r.Route("/images", func(r chi.Router) {
-			r.Method("POST", "/fit", handlers.ForImages(images.Fit))
-			r.Method("POST", "/fill", handlers.ForImages(images.Fill))
-			r.Method("POST", "/resize", handlers.ForImages(images.Resize))
-			r.Method("POST", "/blurr", handlers.ForImages(images.Blurr))
-			r.Method("POST", "/saturate", handlers.ForImages(images.Saturation))
-			r.Method("POST", "/sharpen", handlers.ForImages(images.Sharpen))
-			r.Method("POST", "/gamma", handlers.ForImages(images.Gamma))
-			r.Method("POST", "/contrast", handlers.ForImages(images.Contrast))
-		})
-	})
-
-	fs := http.FileServer(http.Dir("static"))
-	r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := os.Stat("static" + r.RequestURI); os.IsNotExist(err) {
-			http.StripPrefix(r.RequestURI, fs).ServeHTTP(w, r)
-		} else {
-			fs.ServeHTTP(w, r)
-		}
-	})
-	return r
 }
 
 // Run : Starts the app

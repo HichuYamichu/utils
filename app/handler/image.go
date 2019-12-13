@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"bytes"
@@ -10,9 +10,9 @@ import (
 	appErrors "github.com/hichuyamichu-me/utils/errors"
 )
 
-type ForImages func(img *image.Image, form url.Values) (*image.NRGBA, *appErrors.Error)
+type imageHandler func(img *image.Image, opts url.Values) (*image.NRGBA, error)
 
-func (h ForImages) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h imageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	file, _, e := r.FormFile("file")
 	if e != nil {
 		http.Error(w, "no file provided", 400)
@@ -26,8 +26,9 @@ func (h ForImages) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, err := h(&img, r.Form)
-	if err != nil {
-		http.Error(w, err.Msg, err.Code)
+	switch err.(type) {
+	case appErrors.InvalidType:
+		http.Error(w, err.Error(), 400)
 		return
 	}
 

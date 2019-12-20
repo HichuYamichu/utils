@@ -9,8 +9,8 @@ import (
 	appErrors "github.com/hichuyamichu-me/utils/errors"
 )
 
-func Gamma(img *image.Image, opts options) (*image.NRGBA, error) {
-	gamma, err := strconv.ParseFloat(opts.Get("gamma"), 64)
+func Gamma(img *image.Image, a *Args) (*image.NRGBA, error) {
+	gamma, err := strconv.ParseFloat(a.Value, 64)
 	if err != nil {
 		return nil, appErrors.InvalidType(fmt.Errorf("gamma value must be a float"))
 	}

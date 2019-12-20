@@ -4,7 +4,7 @@ import "github.com/jinzhu/gorm"
 
 type Store struct {
 	FS *fs
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func New() *Store {

@@ -1,45 +1,34 @@
 package app
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"net/http"
-	"time"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"github.com/labstack/gommon/log"
 
 	"github.com/hichuyamichu-me/utils/app/handler"
 	"github.com/hichuyamichu-me/utils/app/store"
+	"github.com/hichuyamichu-me/utils/services/image"
 )
 
-// App : Application struct
-type App struct {
-	srv   *http.Server
-	store *store.Store
-}
+func New() *echo.Echo {
+	e := echo.New()
+	e.Logger.SetLevel(log.INFO)
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
 
-// New : Initialize new server instance
-func New(host, port string) *App {
-	a := &App{}
-	a.srv = &http.Server{}
-	a.srv.Addr = fmt.Sprintf("%s:%s", host, port)
-	a.store = store.New()
-	a.srv.Handler = handler.New(a.store)
-	a.srv.WriteTimeout = 15 * time.Second
-	a.srv.ReadTimeout = 15 * time.Second
-	return a
-}
+	s := store.New()
 
-// Run : Starts the app
-func (a *App) Run() {
-	log.Printf("Listening on: http://%s\n", a.srv.Addr)
-	log.Fatal(a.srv.ListenAndServe())
-}
+	api := e.Group("/api")
+	api.Static("/files", "tmp")
+	imageService := api.Group("/images")
+	imageService.POST("/fit", handler.ForImageService(s, image.Fit))
+	imageService.POST("/fill", handler.ForImageService(s, image.Fill))
+	imageService.POST("/resize", handler.ForImageService(s, image.Resize))
+	imageService.POST("/blurr", handler.ForImageService(s, image.Blurr))
+	imageService.POST("/saturate", handler.ForImageService(s, image.Saturation))
+	imageService.POST("/sharpen", handler.ForImageService(s, image.Sharpen))
+	imageService.POST("/gamma", handler.ForImageService(s, image.Gamma))
+	imageService.POST("/contrast", handler.ForImageService(s, image.Contrast))
 
-// Shutdown : Stops the app
-func (a *App) Shutdown() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := a.srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server Shutdown Failed:%+v", err)
-	}
+	return e
 }

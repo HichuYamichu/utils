@@ -2,57 +2,63 @@ package handler
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"net/http"
-	"net/url"
 
 	"github.com/hichuyamichu-me/utils/app/store"
-	appErrors "github.com/hichuyamichu-me/utils/errors"
+	imageService "github.com/hichuyamichu-me/utils/services/image"
+	"github.com/labstack/echo"
 )
 
-type imageHandler struct {
-	store *store.Store
-	sf    imageServiceFunc
+type ImageResponce struct {
+	Path string
 }
 
-type imageServiceFunc func(img *image.Image, opts url.Values) (*image.NRGBA, error)
+type imageServiceFunc func(img *image.Image, a *imageService.Args) (*image.NRGBA, error)
 
-func newImageHandler(store *store.Store, sf imageServiceFunc) *imageHandler {
-	return &imageHandler{store: store, sf: sf}
-}
+func ForImageService(s *store.Store, h imageServiceFunc) echo.HandlerFunc {
+	return echo.HandlerFunc(func(c echo.Context) error {
+		file, err := c.FormFile("file")
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Input file missing.")
+		}
 
-func (h imageHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	file, _, err := r.FormFile("file")
-	if err != nil {
-		http.Error(w, "no file provided", 400)
-		return
-	}
+		src, err := file.Open()
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Input file malformed.")
+		}
+		defer src.Close()
 
-	img, _, e := image.Decode(file)
-	if e != nil {
-		http.Error(w, e.Error(), 400)
-		return
-	}
+		img, _, err := image.Decode(src)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Input file is not an image.")
+		}
 
-	res, err := h.sf(&img, r.Form)
-	switch err.(type) {
-	case appErrors.Missing:
-	case appErrors.InvalidType:
-		http.Error(w, err.Error(), 400)
-		return
-	case appErrors.NotFound:
-		http.Error(w, err.Error(), 404)
-		return
-	}
+		args := &imageService.Args{}
+		args.X = c.FormValue("x")
+		args.Y = c.FormValue("y")
+		args.Filter = c.FormValue("filter")
+		args.Value = c.FormValue("value")
+		res, err := h(&img, args)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+		}
 
-	buffer := new(bytes.Buffer)
-	if err := jpeg.Encode(buffer, res, nil); err != nil {
-		http.Error(w, "unable to encode image", 500)
-		return
-	}
+		buffer := new(bytes.Buffer)
+		if err := jpeg.Encode(buffer, res, nil); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Could not encode the file.")
+		}
 
-	if _, err := w.Write(buffer.Bytes()); err != nil {
-		http.Error(w, "unable to write image", 500)
-	}
+		fName, err := s.FS.SaveTemp(buffer.Bytes(), "image_service_")
+		if err := jpeg.Encode(buffer, res, nil); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "Could not save the file.")
+		}
+
+		fPath := fmt.Sprintf("http://localhost:3000/api/files/%s", fName)
+
+		r := &ImageResponce{Path: fPath}
+		return c.JSON(200, r)
+	})
 }

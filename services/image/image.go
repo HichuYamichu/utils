@@ -8,6 +8,13 @@ import (
 	appErrors "github.com/hichuyamichu-me/utils/errors"
 )
 
+type Args struct {
+	X      string
+	Y      string
+	Filter string
+	Value  string
+}
+
 type options = url.Values
 
 func getFilterType(typeName string) (*imaging.ResampleFilter, error) {

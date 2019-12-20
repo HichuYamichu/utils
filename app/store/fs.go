@@ -3,15 +3,20 @@ package store
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 )
 
 const lifetime = time.Second * 60 * 30
 
+func init() {
+	os.Mkdir("tmp", os.ModePerm)
+}
+
 type fs struct{}
 
-func (fs) SaveWithExpire(bytes []byte, exp time.Duration, pattern string) (string, error) {
-	f, err := ioutil.TempFile("./", pattern)
+func (fs) SaveTemp(bytes []byte, pattern string) (string, error) {
+	f, err := ioutil.TempFile("tmp", pattern)
 	if err != nil {
 		return "", err
 	}
@@ -28,5 +33,5 @@ func (fs) SaveWithExpire(bytes []byte, exp time.Duration, pattern string) (strin
 		return "", err
 	}
 
-	return f.Name(), nil
+	return filepath.Base(f.Name()), nil
 }

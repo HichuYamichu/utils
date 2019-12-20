@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"github.com/hichuyamichu-me/utils/app/handler"
+	"github.com/hichuyamichu-me/utils/app/store"
 )
 
 // App : Application struct
 type App struct {
-	srv *http.Server
+	srv   *http.Server
+	store *store.Store
 }
 
 // New : Initialize new server instance
@@ -20,7 +22,8 @@ func New(host, port string) *App {
 	a := &App{}
 	a.srv = &http.Server{}
 	a.srv.Addr = fmt.Sprintf("%s:%s", host, port)
-	a.srv.Handler = handler.New()
+	a.store = store.New()
+	a.srv.Handler = handler.New(a.store)
 	a.srv.WriteTimeout = 15 * time.Second
 	a.srv.ReadTimeout = 15 * time.Second
 	return a

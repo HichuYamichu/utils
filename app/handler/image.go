@@ -7,18 +7,19 @@ import (
 	"image/jpeg"
 	"net/http"
 
-	"github.com/hichuyamichu-me/utils/app/store"
 	imageService "github.com/hichuyamichu-me/utils/services/image"
 	"github.com/labstack/echo"
 )
 
-type ImageResponce struct {
-	Path string
+// imageResponce represetns JSON responce from ImageService
+type imageResponce struct {
+	URL string `json:"url"`
 }
 
 type imageServiceFunc func(img *image.Image, a *imageService.Args) (*image.NRGBA, error)
 
-func ForImageService(s *store.Store, h imageServiceFunc) echo.HandlerFunc {
+// ForImageService creates echo.HandlerFunc with common code for ImageService
+func (h *Handler) ForImageService(f imageServiceFunc) echo.HandlerFunc {
 	return echo.HandlerFunc(func(c echo.Context) error {
 		file, err := c.FormFile("file")
 		if err != nil {
@@ -41,7 +42,7 @@ func ForImageService(s *store.Store, h imageServiceFunc) echo.HandlerFunc {
 		args.Y = c.FormValue("y")
 		args.Filter = c.FormValue("filter")
 		args.Value = c.FormValue("value")
-		res, err := h(&img, args)
+		res, err := f(&img, args)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
@@ -51,14 +52,14 @@ func ForImageService(s *store.Store, h imageServiceFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Could not encode the file.")
 		}
 
-		fName, err := s.FS.SaveTemp(buffer.Bytes(), "image_service_")
+		fName, err := h.FS.SaveTemp(buffer.Bytes(), "image_service_")
 		if err := jpeg.Encode(buffer, res, nil); err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "Could not save the file.")
 		}
 
 		fPath := fmt.Sprintf("http://localhost:3000/api/files/%s", fName)
 
-		r := &ImageResponce{Path: fPath}
+		r := &imageResponce{URL: fPath}
 		return c.JSON(200, r)
 	})
 }

@@ -2,13 +2,15 @@ package image
 
 import (
 	"fmt"
+	"image"
 	"net/url"
 
 	"github.com/disintegration/imaging"
-	appErrors "github.com/hichuyamichu-me/utils/errors"
 )
 
+// Args arguments for ImageService functions
 type Args struct {
+	img    *image.Image
 	X      string
 	Y      string
 	Filter string
@@ -33,7 +35,7 @@ func getFilterType(typeName string) (*imaging.ResampleFilter, error) {
 	case "NearestNeighbor":
 		filterType = imaging.NearestNeighbor
 	default:
-		return nil, appErrors.InvalidType(fmt.Errorf("invalid filter type"))
+		return nil, fmt.Errorf("invalid filter type")
 	}
 	return &filterType, nil
 }

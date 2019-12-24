@@ -28,7 +28,5 @@ func main() {
 		srv.Shutdown(ctx)
 	}()
 
-	if err := srv.Start(fmt.Sprintf("%s:%s", *host, *port)); err != nil {
-		srv.Logger.Error(err)
-	}
+	srv.Logger.Fatal(srv.Start(fmt.Sprintf("%s:%s", *host, *port)))
 }

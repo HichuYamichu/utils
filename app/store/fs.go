@@ -13,9 +13,9 @@ func init() {
 	os.Mkdir("tmp", os.ModePerm)
 }
 
-type fs struct{}
+type FS struct{}
 
-func (fs) SaveTemp(bytes []byte, pattern string) (string, error) {
+func (FS) SaveTemp(bytes []byte, pattern string) (string, error) {
 	f, err := ioutil.TempFile("tmp", pattern)
 	if err != nil {
 		return "", err

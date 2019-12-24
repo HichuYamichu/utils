@@ -6,29 +6,30 @@ import (
 	"github.com/labstack/gommon/log"
 
 	"github.com/hichuyamichu-me/utils/app/handler"
-	"github.com/hichuyamichu-me/utils/app/store"
 	"github.com/hichuyamichu-me/utils/services/image"
 )
 
+// New creates new app instance
 func New() *echo.Echo {
 	e := echo.New()
+	e.HideBanner = true
 	e.Logger.SetLevel(log.INFO)
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	s := store.New()
+	h := handler.New()
 
 	api := e.Group("/api")
 	api.Static("/files", "tmp")
 	imageService := api.Group("/images")
-	imageService.POST("/fit", handler.ForImageService(s, image.Fit))
-	imageService.POST("/fill", handler.ForImageService(s, image.Fill))
-	imageService.POST("/resize", handler.ForImageService(s, image.Resize))
-	imageService.POST("/blurr", handler.ForImageService(s, image.Blurr))
-	imageService.POST("/saturate", handler.ForImageService(s, image.Saturation))
-	imageService.POST("/sharpen", handler.ForImageService(s, image.Sharpen))
-	imageService.POST("/gamma", handler.ForImageService(s, image.Gamma))
-	imageService.POST("/contrast", handler.ForImageService(s, image.Contrast))
+	imageService.POST("/fill", h.ForImageService(image.Fit))
+	imageService.POST("/fill", h.ForImageService(image.Fill))
+	imageService.POST("/resize", h.ForImageService(image.Resize))
+	imageService.POST("/blurr", h.ForImageService(image.Blurr))
+	imageService.POST("/saturate", h.ForImageService(image.Saturation))
+	imageService.POST("/sharpen", h.ForImageService(image.Sharpen))
+	imageService.POST("/gamma", h.ForImageService(image.Gamma))
+	imageService.POST("/contrast", h.ForImageService(image.Contrast))
 
 	return e
 }
